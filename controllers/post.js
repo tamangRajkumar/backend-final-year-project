@@ -1,28 +1,58 @@
 import Post from "../models/post";
 import User from "../models/user";
 import cloudinary from "cloudinary";
+console.log("cloudinary key", process.env.CLOUDINARY_NAME);
+
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_NAME || "demo",
+//   api_key: process.env.CLOUDINARY_KEY || "demo",
+//   api_secret: process.env.CLOUDINARY_SECRET || "demo",
+// });
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_KEY,
-  api_secret: process.env.CLOUDINARY_SECRET,
+  cloud_name: process.env.CLOUDINARY_NAME || "dsynpfcpm" || "demo",
+  api_key: process.env.CLOUDINARY_KEY || "734459153853134" || "demo",
+  api_secret:
+    process.env.CLOUDINARY_SECRET || "dELPoFvpXI0c3SLFIuCAslnPf4s" || "demo",
 });
 
 // Upload Image to cloudinary and response back image url and public id
 export const uploadImage = async (req, res) => {
-  // console.log("req files=> ", req.files);
-  const imagePath = req.files.image.path;
-  console.log(imagePath);
-
   try {
-    const result = await cloudinary.uploader.upload(imagePath);
-    //   console.log("Uploaded image result=> ", result);
+    console.log("Upload request received");
+    console.log("req.file:", req.file);
+
+    // Check if file exists
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file provided",
+      });
+    }
+
+    const imagePath = req.file.path;
+    console.log("Image path:", imagePath);
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(imagePath, {
+      folder: "final-year-project",
+      resource_type: "auto",
+    });
+
+    console.log("Upload successful:", result.secure_url);
+
     res.json({
+      success: true,
       url: result.secure_url,
       public_id: result.public_id,
     });
   } catch (error) {
-    console.log("Error=> ", error);
+    console.error("Upload error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Image upload failed",
+      error: error.message,
+    });
   }
 };
 

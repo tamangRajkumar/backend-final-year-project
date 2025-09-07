@@ -5,7 +5,21 @@ import { hashPassword, comparePassword } from "../helpers/auth.js";
 //sign up user
 export const signUp = async (req, res) => {
   console.log(req.body);
-  const { fname, lname, country, gender, email, password,userProfileImage,userCoverImage, favoritePostsList } = req.body;
+  const {
+    fname,
+    lname,
+    country,
+    gender,
+    email,
+    password,
+    role,
+    businessInfo,
+    kycInfo,
+    userProfileImage,
+    userCoverImage,
+    favoritePostsList,
+  } = req.body;
+
   //validation
   if (!fname) {
     return res.status(400).send("First name is required");
@@ -19,10 +33,38 @@ export const signUp = async (req, res) => {
   if (!gender) {
     return res.status(400).send("Gender is required");
   }
-  if (!password || password.length < 6) {
+  if (!role) {
+    return res.status(400).send("Account type is required");
+  }
+  if (!password || password.length < 4) {
     return res
       .status(400)
-      .send("Password is required and should be min 6 characters long");
+      .send("Password is required and should be min 4 characters long");
+  }
+
+  // KYC validation
+  if (!kycInfo || !kycInfo.documentType) {
+    return res.status(400).send("KYC document type is required");
+  }
+  if (!kycInfo.documentNumber) {
+    return res.status(400).send("KYC document number is required");
+  }
+  if (!kycInfo.documentImage || !kycInfo.documentImage.url) {
+    return res.status(400).send("KYC document image is required");
+  }
+
+  // Additional validation for business accounts
+  if (role === "business" && businessInfo) {
+    if (!businessInfo.businessName) {
+      return res
+        .status(400)
+        .send("Business name is required for business accounts");
+    }
+    if (!businessInfo.businessType) {
+      return res
+        .status(400)
+        .send("Business type is required for business accounts");
+    }
   }
 
   //check for existing user
@@ -30,20 +72,37 @@ export const signUp = async (req, res) => {
   if (exist) {
     return res.status(400).send("Email already exist");
   }
+
   //hash password
   const hashedPassword = await hashPassword(password);
+
   //register
-  const user = new User({
+  const userData = {
     fname,
     lname,
-    country, 
+    country,
     gender,
     email,
     password: hashedPassword,
+    role,
+    kycInfo: {
+      documentType: kycInfo.documentType,
+      documentNumber: kycInfo.documentNumber,
+      documentImage: kycInfo.documentImage,
+      isVerified: false, // Default to unverified
+    },
     userProfileImage,
     userCoverImage,
     favoritePostsList,
-  });
+  };
+
+  // Add business info if role is business
+  if (role === "business" && businessInfo) {
+    userData.businessInfo = businessInfo;
+  }
+
+  const user = new User(userData);
+
   try {
     await user.save();
     console.log("USER CREATED", user);
@@ -63,7 +122,7 @@ export const logIn = async (req, res) => {
   if (!password) {
     return res.status(400).send("Password is required");
   }
-  
+
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(400).send("Email not found");
@@ -72,9 +131,23 @@ export const logIn = async (req, res) => {
   if (!isMatch) {
     return res.status(400).send("Password is incorrect");
   }
-  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7D",
-  });
+
+  // Check KYC verification status
+  if (!user.kycInfo || !user.kycInfo.isVerified) {
+    return res
+      .status(403)
+      .send(
+        "Your account is pending KYC verification. Please wait for admin approval."
+      );
+  }
+  const token = jwt.sign(
+    { _id: user._id },
+    // process.env.JWT_SECRET || 
+    "dskfjjnasnfgh762@#@#dqffsadfsa7hghgh",
+    {
+      expiresIn: "7D",
+    }
+  );
 
   user.password = undefined;
   try {
@@ -87,9 +160,6 @@ export const logIn = async (req, res) => {
     return res.status(400).send(error);
   }
 };
-
-
-
 
 // Update User Profile
 export const updateUserProfile = async (req, res) => {
@@ -116,5 +186,4 @@ export const updateUserProfile = async (req, res) => {
   } catch (error) {
     console.log("Error=> ", error);
   }
- 
 };

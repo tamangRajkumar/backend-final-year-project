@@ -2,9 +2,12 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon -r esm server.js"
+    "start": "nodemon -r esm server.js",
+    "create-admin": "node -r esm scripts/createAdmin.js",
+    "create-admin-simple": "node -r esm scripts/createAdminSimple.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +25,8 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.6.0",
     "morgan": "^1.10.0",
-    "nodemon": "^2.0.19"
+    "multer": "^2.0.2",
+    "nodemon": "^2.0.19",
+    "socket.io": "^4.8.1"
   }
 }

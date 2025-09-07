@@ -1,36 +1,60 @@
 import express from "express";
-import formidable from "express-formidable";
+import { requireSignin } from "../middlewares/auth.js";
+import {
+  createPost,
+  getAllPosts,
+  getPostsByUser,
+  getPostById,
+  updatePost,
+  deletePost,
+  toggleLike,
+  addComment,
+  expressInterest,
+  updateInterestStatus,
+  registerForProposal,
+  getRegisteredUsers,
+  updateRegistrationStatus
+} from "../controllers/postController.js";
 
 const router = express.Router();
 
-//import middlewares
-import { requireSignin } from "../middlewares/auth";
+// Create a new post
+router.post("/", requireSignin, createPost);
 
-// import controllers
-import {
-  uploadImage,
-  createPost,
-  userPosts,
-  fetchIndividualPost,
-  fetchAllUsersPosts,
-  submitPostComment,
-  deletePostComment,
-  postCommentsDataOnly,
-  postLiked,
-  postUnliked,
-  fetchAllUsers
-} from "../controllers/post";
+// Get all posts with pagination and filtering
+router.get("/", getAllPosts);
 
-router.post("/upload-image", formidable(20 * 1024 * 1024), uploadImage);
-router.post("/create-post", requireSignin, createPost);
-router.get("/user-posts", requireSignin, userPosts);
-router.get("/fetchindividualpost/:_id", fetchIndividualPost);
-router.get("/fetch-all-users-posts/:category", fetchAllUsersPosts);
-router.post("/submit-post-comment", requireSignin, submitPostComment);
-router.put("/delete-post-comment", requireSignin, deletePostComment);
-router.post("/post-comments-data", requireSignin, postCommentsDataOnly);
-router.put("/post-liked", requireSignin, postLiked);
-router.put("/post-unliked", requireSignin, postUnliked);
-router.get("/fetch-all-users", fetchAllUsers);
+// Get posts by specific user
+router.get("/user/:userId", getPostsByUser);
 
-module.exports = router;
+// Get single post by ID
+router.get("/:id", getPostById);
+
+// Update post
+router.put("/:id", requireSignin, updatePost);
+
+// Delete post
+router.delete("/:id", requireSignin, deletePost);
+
+// Like/Unlike post
+router.post("/:id/like", requireSignin, toggleLike);
+
+// Add comment to post
+router.post("/:id/comment", requireSignin, addComment);
+
+// Express interest in business proposal
+router.post("/:id/interest", requireSignin, expressInterest);
+
+// Update interest status (for proposal owner)
+router.put("/:id/interest/:interestId", requireSignin, updateInterestStatus);
+
+// Register for business proposal
+router.post("/:id/register", requireSignin, registerForProposal);
+
+// Get registered users for a proposal (for proposal owner)
+router.get("/:id/registered-users", requireSignin, getRegisteredUsers);
+
+// Update registration status (for proposal owner)
+router.put("/:id/registration/:registrationId", requireSignin, updateRegistrationStatus);
+
+export default router;
