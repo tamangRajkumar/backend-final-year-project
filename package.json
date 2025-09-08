@@ -5,7 +5,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon -r esm server.js",
+    "start": "node -r esm server.js",
     "create-admin": "node -r esm scripts/createAdmin.js",
     "create-admin-simple": "node -r esm scripts/createAdminSimple.js"
   },
