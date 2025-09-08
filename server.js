@@ -18,19 +18,22 @@ const httpServer = createServer(app);
 
 // Database connection
 mongoose
-  .connect(process.env.DATABASE_URL || "mongodb://localhost:27017/final-year-project", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(
+    process.env.DATABASE_URL || "mongodb://localhost:27017/final-year-project",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(async () => {
     console.log("Database is connected");
-    
+
     // Import and register all models to ensure they're available
     await import("./models/user.js");
     await import("./models/post.js");
     await import("./models/event.js");
     await import("./models/chat.js");
-    
+
     // Check and create admin user if it doesn't exist
     await checkAndCreateAdmin();
   })
@@ -43,7 +46,7 @@ const checkAndCreateAdmin = async () => {
   try {
     const User = (await import("./models/user.js")).default;
     const bcrypt = (await import("bcrypt")).default;
-    
+
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: "admin@gmail.com" });
     if (existingAdmin) {
@@ -91,15 +94,23 @@ const checkAndCreateAdmin = async () => {
     console.log("🔑 Password: admin");
     console.log("👑 Role: admin");
     console.log("✅ KYC Status: Verified");
-
   } catch (error) {
     console.error("❌ Error creating admin user:", error);
   }
 };
 
 // Middleware
+// app.use(
+//   cors()
+// );
+
 app.use(
-  cors()
+  cors({
+    origin: "*", // allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false, // set to true only if cookies/auth headers are needed
+  })
 );
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: "true" }));
@@ -107,27 +118,30 @@ app.use(express.urlencoded({ extended: "true" }));
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
+  },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
     // Accept only image files
-    if (file.mimetype.startsWith('image/')) {
+    if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'), false);
+      cb(new Error("Only image files are allowed!"), false);
     }
   },
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
 });
 
 // Morgan
@@ -152,12 +166,13 @@ app.use("/api", chatRoutes);
 // Initialize Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    // origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: "*",
     methods: ["GET", "POST"],
-    credentials: true
-  }
+    credentials: true,
+  },
 });
-
+s;
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
   try {
@@ -166,12 +181,13 @@ io.use(async (socket, next) => {
       return next(new Error("Authentication error"));
     }
 
-    const decoded = jwt.verify(token, 
+    const decoded = jwt.verify(
+      token,
       "dskfjjnasnfgh762@#@#dqffsadfsa7hghgh"
       // process.env.JWT_SECRET
     );
     const user = await User.findById(decoded._id).select("-password");
-    
+
     if (!user) {
       return next(new Error("User not found"));
     }
@@ -185,31 +201,33 @@ io.use(async (socket, next) => {
 });
 
 // Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.user.fname} ${socket.user.lname} (${socket.userId})`);
-  
+io.on("connection", (socket) => {
+  console.log(
+    `User connected: ${socket.user.fname} ${socket.user.lname} (${socket.userId})`
+  );
+
   // Join user to their personal room
   socket.join(socket.userId);
 
   // Handle joining chat room
-  socket.on('join_chat', (chatId) => {
+  socket.on("join_chat", (chatId) => {
     socket.join(chatId);
     console.log(`User ${socket.userId} joined chat ${chatId}`);
   });
 
   // Handle leaving chat room
-  socket.on('leave_chat', (chatId) => {
+  socket.on("leave_chat", (chatId) => {
     socket.leave(chatId);
     console.log(`User ${socket.userId} left chat ${chatId}`);
   });
 
   // Handle sending message
-  socket.on('send_message', async (data) => {
+  socket.on("send_message", async (data) => {
     try {
       const { chatId, content, messageType, replyTo } = data;
-      
+
       // Emit message to all users in the chat room
-      socket.to(chatId).emit('new_message', {
+      socket.to(chatId).emit("new_message", {
         chatId,
         content,
         messageType,
@@ -220,59 +238,60 @@ io.on('connection', (socket) => {
           lname: socket.user.lname,
           userProfileImage: socket.user.userProfileImage,
           role: socket.user.role,
-          businessInfo: socket.user.businessInfo
+          businessInfo: socket.user.businessInfo,
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       // Emit to sender as well for confirmation
-      socket.emit('message_sent', {
+      socket.emit("message_sent", {
         chatId,
         content,
         messageType,
         replyTo,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
-
     } catch (error) {
-      console.error('Error handling send_message:', error);
-      socket.emit('error', { message: 'Failed to send message' });
+      console.error("Error handling send_message:", error);
+      socket.emit("error", { message: "Failed to send message" });
     }
   });
 
   // Handle typing indicators
-  socket.on('typing_start', (data) => {
-    socket.to(data.chatId).emit('user_typing', {
+  socket.on("typing_start", (data) => {
+    socket.to(data.chatId).emit("user_typing", {
       chatId: data.chatId,
       userId: socket.userId,
       user: {
         _id: socket.user._id,
         fname: socket.user.fname,
         lname: socket.user.lname,
-        userProfileImage: socket.user.userProfileImage
-      }
+        userProfileImage: socket.user.userProfileImage,
+      },
     });
   });
 
-  socket.on('typing_stop', (data) => {
-    socket.to(data.chatId).emit('user_stopped_typing', {
+  socket.on("typing_stop", (data) => {
+    socket.to(data.chatId).emit("user_stopped_typing", {
       chatId: data.chatId,
-      userId: socket.userId
+      userId: socket.userId,
     });
   });
 
   // Handle message read status
-  socket.on('mark_as_read', (data) => {
-    socket.to(data.chatId).emit('message_read', {
+  socket.on("mark_as_read", (data) => {
+    socket.to(data.chatId).emit("message_read", {
       chatId: data.chatId,
       userId: socket.userId,
-      messageId: data.messageId
+      messageId: data.messageId,
     });
   });
 
   // Handle disconnect
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.user.fname} ${socket.user.lname} (${socket.userId})`);
+  socket.on("disconnect", () => {
+    console.log(
+      `User disconnected: ${socket.user.fname} ${socket.user.lname} (${socket.userId})`
+    );
   });
 });
 
