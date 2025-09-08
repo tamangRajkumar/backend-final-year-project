@@ -172,7 +172,7 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
-s;
+
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
   try {
