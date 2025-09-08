@@ -15,8 +15,8 @@ import {
 
 const router = express.Router();
 
-// Get all users (Admin only)
-router.get("/users", requireSignin, requireAdmin, getAllUsers);
+// Get all users (All authenticated users)
+router.get("/users", requireSignin, getAllUsers);
 
 // Get all businesses (Admin and Business)
 router.get("/businesses", requireSignin, requireBusinessOrAdmin, getAllBusinesses);

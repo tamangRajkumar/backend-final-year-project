@@ -19,42 +19,42 @@ import {
 const router = express.Router();
 
 // Create a new post
-router.post("/", requireSignin, createPost);
+router.post("/posts", requireSignin, createPost);
 
 // Get all posts with pagination and filtering
-router.get("/", getAllPosts);
+router.get("/posts", getAllPosts);
 
 // Get posts by specific user
-router.get("/user/:userId", getPostsByUser);
+router.get("/posts/user/:userId", getPostsByUser);
 
 // Get single post by ID
-router.get("/:id", getPostById);
+router.get("/posts/:id", getPostById);
 
 // Update post
-router.put("/:id", requireSignin, updatePost);
+router.put("/posts/:id", requireSignin, updatePost);
 
 // Delete post
-router.delete("/:id", requireSignin, deletePost);
+router.delete("/posts/:id", requireSignin, deletePost);
 
 // Like/Unlike post
-router.post("/:id/like", requireSignin, toggleLike);
+router.post("/posts/:id/like", requireSignin, toggleLike);
 
 // Add comment to post
-router.post("/:id/comment", requireSignin, addComment);
+router.post("/posts/:id/comment", requireSignin, addComment);
 
 // Express interest in business proposal
-router.post("/:id/interest", requireSignin, expressInterest);
+router.post("/posts/:id/interest", requireSignin, expressInterest);
 
 // Update interest status (for proposal owner)
-router.put("/:id/interest/:interestId", requireSignin, updateInterestStatus);
+router.put("/posts/:id/interest/:interestId", requireSignin, updateInterestStatus);
 
 // Register for business proposal
-router.post("/:id/register", requireSignin, registerForProposal);
+router.post("/posts/:id/register", requireSignin, registerForProposal);
 
 // Get registered users for a proposal (for proposal owner)
-router.get("/:id/registered-users", requireSignin, getRegisteredUsers);
+router.get("/posts/:id/registered-users", requireSignin, getRegisteredUsers);
 
 // Update registration status (for proposal owner)
-router.put("/:id/registration/:registrationId", requireSignin, updateRegistrationStatus);
+router.put("/posts/:id/registration/:registrationId", requireSignin, updateRegistrationStatus);
 
 export default router;

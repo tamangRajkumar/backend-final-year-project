@@ -94,4 +94,6 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("User", userSchema);
+// Register the model if it doesn't exist, otherwise return the existing model
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+export default User;

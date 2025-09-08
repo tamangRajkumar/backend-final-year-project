@@ -46,4 +46,6 @@ chatSchema.index({ participants: 1 });
 chatSchema.index({ lastMessageAt: -1 });
 chatSchema.index({ createdBy: 1 });
 
-export default mongoose.model("Chat", chatSchema);
+// Register the model if it doesn't exist, otherwise return the existing model
+const Chat = mongoose.models.Chat || mongoose.model("Chat", chatSchema);
+export default Chat;

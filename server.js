@@ -8,10 +8,10 @@ import { readdirSync } from "fs";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
-import User from "./models/user.js";
 import morgan from "morgan";
 import multer from "multer";
 import path from "path";
+import User from "./models/user.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -24,6 +24,13 @@ mongoose
   })
   .then(async () => {
     console.log("Database is connected");
+    
+    // Import and register all models to ensure they're available
+    await import("./models/user.js");
+    await import("./models/post.js");
+    await import("./models/event.js");
+    await import("./models/chat.js");
+    
     // Check and create admin user if it doesn't exist
     await checkAndCreateAdmin();
   })

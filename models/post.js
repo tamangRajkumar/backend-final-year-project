@@ -116,7 +116,7 @@ const postSchema = new mongoose.Schema(
 
     favoritePost: "",
 
-    likes: [{ type: ObjectId, ref: "user" }],
+    likes: [{ type: ObjectId, ref: "User" }],
 
     comments: [
       {
@@ -151,4 +151,6 @@ const postSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("Post", postSchema);
+// Register the model if it doesn't exist, otherwise return the existing model
+const Post = mongoose.models.Post || mongoose.model("Post", postSchema);
+export default Post;

@@ -135,4 +135,6 @@ eventSchema.index({ startDate: 1, isActive: 1, isPublished: 1 });
 eventSchema.index({ organizer: 1 });
 eventSchema.index({ category: 1 });
 
-export default mongoose.model("Event", eventSchema);
+// Register the model if it doesn't exist, otherwise return the existing model
+const Event = mongoose.models.Event || mongoose.model("Event", eventSchema);
+export default Event;

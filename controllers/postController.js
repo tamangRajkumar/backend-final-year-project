@@ -1,5 +1,31 @@
 import Post from "../models/post.js";
 import User from "../models/user.js";
+import mongoose from "mongoose";
+
+// Ensure User model is registered
+const ensureUserModel = () => {
+  if (!mongoose.models.User) {
+    const userSchema = new mongoose.Schema({
+      fname: String,
+      lname: String,
+      email: String,
+      role: String,
+      userProfileImage: {
+        url: String,
+        public_id: String
+      },
+      businessInfo: {
+        businessName: String,
+        businessType: String,
+        businessDescription: String,
+        businessWebsite: String,
+        businessPhone: String,
+        businessAddress: String
+      }
+    });
+    mongoose.model("User", userSchema);
+  }
+};
 
 // Create a new post
 export const createPost = async (req, res) => {
@@ -92,6 +118,7 @@ export const createPost = async (req, res) => {
 };
 
 // Get all posts with pagination and filtering
+// Get all posts with pagination and filtering
 export const getAllPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -103,31 +130,31 @@ export const getAllPosts = async (req, res) => {
 
     // Build query
     let query = { isActive: true };
-    
+
     if (postType) {
       query.postType = postType;
     }
-    
+
     if (category) {
       query.category = category;
     }
-    
+
     if (search) {
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
       ];
     }
 
     // Get total count
     const totalPosts = await Post.countDocuments(query);
-    
-    // Get posts with pagination
+
+    // Get posts with pagination + populate
     const posts = await Post.find(query)
-      .populate('postedBy', 'fname lname email role userProfileImage businessInfo')
-      .populate('likes', 'fname lname')
-      .populate('comments.postedBy', 'fname lname userProfileImage')
+      .populate("postedBy", "fname lname email role userProfileImage businessInfo")
+      .populate("likes", "fname lname")
+      .populate("comments.postedBy", "fname lname userProfileImage")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -143,19 +170,19 @@ export const getAllPosts = async (req, res) => {
         totalPosts,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
-        limit
-      }
+        limit,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching posts",
-      error: error.message
+      error: error.message,
     });
   }
 };
+
 
 // Get posts by user
 export const getPostsByUser = async (req, res) => {
