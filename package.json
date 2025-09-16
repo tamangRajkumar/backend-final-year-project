@@ -5,9 +5,10 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node -r esm server.js",
-    "create-admin": "node -r esm scripts/createAdmin.js",
-    "create-admin-simple": "node -r esm scripts/createAdminSimple.js"
+    "start": "nodemon server.js",
+    "dev": "nodemon server.js",
+    "create-admin": "node scripts/createAdmin.js",
+    "create-admin-simple": "node scripts/createAdminSimple.js"
   },
   "keywords": [],
   "author": "",

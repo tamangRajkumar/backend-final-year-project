@@ -1,5 +1,5 @@
-import Post from "../models/post";
-import User from "../models/user";
+import Post from "../models/post.js";
+import User from "../models/user.js";
 import cloudinary from "cloudinary";
 console.log("cloudinary key", process.env.CLOUDINARY_NAME);
 
