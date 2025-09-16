@@ -34,10 +34,13 @@ export const uploadImage = async (req, res) => {
     console.log("Image path:", imagePath);
 
     // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(imagePath, {
-      folder: "final-year-project",
-      resource_type: "auto",
-    });
+    const result = await cloudinary.uploader.upload(
+      imagePath
+      //    {
+      //   folder: "final-year-project",
+      //   resource_type: "auto",
+      // }
+    );
 
     console.log("Upload successful:", result.secure_url);
 

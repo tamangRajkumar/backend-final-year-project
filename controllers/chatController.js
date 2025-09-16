@@ -207,7 +207,7 @@ export const getChatMessages = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
   try {
-    const { chatId, content, messageType, replyTo } = req.body;
+    const { chatId } = req.params; const { content, messageType, replyTo } = req.body;
     const senderId = req.auth._id;
 
     if (!chatId || !content) {

@@ -75,3 +75,5 @@ messageSchema.index({ sender: 1 });
 messageSchema.index({ isRead: 1 });
 
 export default mongoose.model("Message", messageSchema);
+
+

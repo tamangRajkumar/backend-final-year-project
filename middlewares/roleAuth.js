@@ -67,3 +67,4 @@ export const requireVerifiedBusiness = async (req, res, next) => {
     return res.status(500).json({ error: "Server error in business verification" });
   }
 };
+

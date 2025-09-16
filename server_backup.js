@@ -161,7 +161,7 @@ app.use("/api", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api/featured", featuredRoutes);
 app.use("/api", postRoutes);
-app.use("/api/chat", chatRoutes);
+app.use("/api", chatRoutes);
 app.use("/api", eventRoutes);
 
 // Initialize Socket.IO
@@ -173,9 +173,6 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
-
-// Store online users
-const onlineUsers = new Map();
 
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {
@@ -210,19 +207,8 @@ io.on("connection", (socket) => {
     `User connected: ${socket.user.fname} ${socket.user.lname} (${socket.userId})`
   );
 
-  // Add user to online users map
-  onlineUsers.set(socket.userId, {
-    userId: socket.userId,
-    user: socket.user,
-    socketId: socket.id,
-    connectedAt: new Date()
-  });
-
   // Join user to their personal room
   socket.join(socket.userId);
-
-  // Emit online users list to all connected clients
-  io.emit("online_users", Array.from(onlineUsers.values()));
 
   // Handle joining chat room
   socket.on("join_chat", (chatId) => {
@@ -307,12 +293,6 @@ io.on("connection", (socket) => {
     console.log(
       `User disconnected: ${socket.user.fname} ${socket.user.lname} (${socket.userId})`
     );
-
-    // Remove user from online users map
-    onlineUsers.delete(socket.userId);
-
-    // Emit updated online users list to all connected clients
-    io.emit("online_users", Array.from(onlineUsers.values()));
   });
 });
 
