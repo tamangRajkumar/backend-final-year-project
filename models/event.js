@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const { ObjectId } = mongoose.Schema;
+const { ObjectId } = mongoose.Types;
 
 const eventSchema = new mongoose.Schema(
   {
@@ -131,10 +131,15 @@ const eventSchema = new mongoose.Schema(
 );
 
 // Index for better query performance
-eventSchema.index({ startDate: 1, isActive: 1, isPublished: 1 });
+eventSchema.index({ startDate: 1 });
 eventSchema.index({ organizer: 1 });
 eventSchema.index({ category: 1 });
+eventSchema.index({ eventType: 1 });
 
 // Register the model if it doesn't exist, otherwise return the existing model
 const Event = mongoose.models.Event || mongoose.model("Event", eventSchema);
+
+// Debug: Log the model to check if it's properly defined
+console.log("Event model registered:", Event.modelName);
+
 export default Event;

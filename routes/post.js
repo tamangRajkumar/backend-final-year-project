@@ -13,8 +13,10 @@ import {
   updateInterestStatus,
   registerForProposal,
   getRegisteredUsers,
-  updateRegistrationStatus
+  updateRegistrationStatus,
+  togglePostFeatured
 } from "../controllers/postController.js";
+import { deletePostComment } from "../controllers/post.js";
 
 const router = express.Router();
 
@@ -24,7 +26,7 @@ router.post("/posts", requireSignin, createPost);
 // Get all posts with pagination and filtering
 router.get("/posts", getAllPosts);
 
-// Get posts by specific user
+// Get posts by specific user (more specific route first)
 router.get("/posts/user/:userId", getPostsByUser);
 
 // Get single post by ID
@@ -42,6 +44,9 @@ router.post("/posts/:id/like", requireSignin, toggleLike);
 // Add comment to post
 router.post("/posts/:id/comment", requireSignin, addComment);
 
+// Delete comment from post
+router.put("/delete-post-comment", requireSignin, deletePostComment);
+
 // Express interest in business proposal
 router.post("/posts/:id/interest", requireSignin, expressInterest);
 
@@ -56,5 +61,8 @@ router.get("/posts/:id/registered-users", requireSignin, getRegisteredUsers);
 
 // Update registration status (for proposal owner)
 router.put("/posts/:id/registration/:registrationId", requireSignin, updateRegistrationStatus);
+
+// Toggle featured status (Admin only)
+router.put("/posts/:id/featured", requireSignin, togglePostFeatured);
 
 export default router;

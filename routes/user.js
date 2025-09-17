@@ -10,7 +10,9 @@ import {
   getPendingKYC,
   verifyKYC,
   deleteUser,
-  unverifyKYC
+  unverifyKYC,
+  updateGoalsAndSkills,
+  getGoalsAndSkills
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -18,8 +20,8 @@ const router = express.Router();
 // Get all users (All authenticated users)
 router.get("/users", requireSignin, getAllUsers);
 
-// Get all businesses (Admin and Business)
-router.get("/businesses", requireSignin, requireBusinessOrAdmin, getAllBusinesses);
+// Get all businesses (All authenticated users)
+router.get("/businesses", requireSignin, getAllBusinesses);
 
 // Get user by ID (Admin only)
 router.get("/users/:id", requireSignin, requireAdmin, getUserById);
@@ -41,5 +43,14 @@ router.put("/kyc/:id/unverify", requireSignin, requireAdmin, unverifyKYC);
 
 // Delete user (Admin only)
 router.delete("/users/:id", requireSignin, requireAdmin, deleteUser);
+
+// Test route
+router.get("/user/test", (req, res) => {
+  res.json({ message: "User routes are working!" });
+});
+
+// Goals and Skills routes (All authenticated users)
+router.get("/user/goals-skills", requireSignin, getGoalsAndSkills);
+router.put("/user/goals-skills", requireSignin, updateGoalsAndSkills);
 
 export default router;

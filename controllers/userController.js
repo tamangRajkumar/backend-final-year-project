@@ -3,6 +3,7 @@ import User from "../models/user.js";
 // Get all users with pagination
 export const getAllUsers = async (req, res) => {
   try {
+    console.log("getAllUsers called with query:", req.query);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const role = req.query.role; // Filter by role if provided
@@ -20,7 +21,12 @@ export const getAllUsers = async (req, res) => {
       query.$or = [
         { fname: { $regex: search, $options: 'i' } },
         { lname: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { email: { $regex: search, $options: 'i' } },
+        { 'businessInfo.businessName': { $regex: search, $options: 'i' } },
+        { 'businessInfo.businessType': { $regex: search, $options: 'i' } },
+        { 'businessInfo.businessDescription': { $regex: search, $options: 'i' } },
+        { goals: { $in: [new RegExp(search, 'i')] } },
+        { skills: { $in: [new RegExp(search, 'i')] } }
       ];
     }
 
@@ -62,6 +68,7 @@ export const getAllUsers = async (req, res) => {
 // Get all businesses with pagination
 export const getAllBusinesses = async (req, res) => {
   try {
+    console.log("getAllBusinesses called with query:", req.query);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search; // Search by business name or email
@@ -76,7 +83,11 @@ export const getAllBusinesses = async (req, res) => {
         { fname: { $regex: search, $options: 'i' } },
         { lname: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { 'businessInfo.businessName': { $regex: search, $options: 'i' } }
+        { 'businessInfo.businessName': { $regex: search, $options: 'i' } },
+        { 'businessInfo.businessType': { $regex: search, $options: 'i' } },
+        { 'businessInfo.businessDescription': { $regex: search, $options: 'i' } },
+        { goals: { $in: [new RegExp(search, 'i')] } },
+        { skills: { $in: [new RegExp(search, 'i')] } }
       ];
     }
     
@@ -420,6 +431,121 @@ export const unverifyKYC = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error unverifying KYC",
+      error: error.message
+    });
+  }
+};
+
+// Update user goals and skills
+export const updateGoalsAndSkills = async (req, res) => {
+  try {
+    console.log("updateGoalsAndSkills called");
+    const userId = req.auth._id;
+    const { goals, skills } = req.body;
+    console.log("User ID:", userId);
+    console.log("Goals received:", goals);
+    console.log("Skills received:", skills);
+
+    // Validate input
+    if (!Array.isArray(goals) || !Array.isArray(skills)) {
+      return res.status(400).json({
+        success: false,
+        message: "Goals and skills must be arrays"
+      });
+    }
+
+    // Validate each goal and skill
+    const validGoals = goals.filter(goal => 
+      typeof goal === 'string' && goal.trim().length > 0 && goal.trim().length <= 100
+    );
+    
+    const validSkills = skills.filter(skill => 
+      typeof skill === 'string' && skill.trim().length > 0 && skill.trim().length <= 50
+    );
+
+    // Limit number of goals and skills
+    if (validGoals.length > 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Maximum 10 goals allowed"
+      });
+    }
+
+    if (validSkills.length > 20) {
+      return res.status(400).json({
+        success: false,
+        message: "Maximum 20 skills allowed"
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        goals: validGoals,
+        skills: validSkills
+      },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Goals and skills updated successfully",
+      data: {
+        goals: user.goals,
+        skills: user.skills
+      }
+    });
+
+  } catch (error) {
+    console.error("Error updating goals and skills:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating goals and skills",
+      error: error.message
+    });
+  }
+};
+
+// Get user goals and skills
+export const getGoalsAndSkills = async (req, res) => {
+  try {
+    console.log("getGoalsAndSkills called");
+    const userId = req.auth._id;
+    console.log("User ID:", userId);
+
+    const user = await User.findById(userId).select('goals skills');
+    console.log("User found:", user ? "Yes" : "No");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    console.log("Goals:", user.goals);
+    console.log("Skills:", user.skills);
+
+    res.json({
+      success: true,
+      data: {
+        goals: user.goals || [],
+        skills: user.skills || []
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching goals and skills:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching goals and skills",
       error: error.message
     });
   }

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Event from "../models/event.js";
 import User from "../models/user.js";
 
@@ -127,18 +128,20 @@ export const createEvent = async (req, res) => {
 // Get all published events with pagination and filtering
 export const getAllEvents = async (req, res) => {
   try {
+    console.log("getAllEvents called with query:", req.query);
+    console.log("Request URL:", req.url);
+    console.log("Request method:", req.method);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const category = req.query.category;
     const eventType = req.query.eventType;
     const search = req.query.search;
+    const featured = req.query.featured;
     const skip = (page - 1) * limit;
 
-    // Build query
+    // Build query - search by title, description, and tags
     let query = { 
-      isActive: true, 
-      isPublished: true,
-      startDate: { $gte: new Date() } // Only future events
+      // No filters needed since isActive and isPublished don't exist in Event model
     };
     
     if (category) {
@@ -149,6 +152,11 @@ export const getAllEvents = async (req, res) => {
       query.eventType = eventType;
     }
     
+    if (featured === 'true') {
+      query.isFeatured = true;
+    }
+    
+    // Search by title, description, and tags (not by ID)
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -157,8 +165,19 @@ export const getAllEvents = async (req, res) => {
       ];
     }
 
+    console.log("Final query:", JSON.stringify(query, null, 2));
+
+    // Debug: Check total events in database
+    const totalEventsInDB = await Event.countDocuments({});
+    console.log("Total events in database:", totalEventsInDB);
+    
+    // Debug: Check a few sample events
+    const sampleEvents = await Event.find({}).limit(3).select('title isActive isPublished');
+    console.log("Sample events:", sampleEvents);
+
     // Get total count
     const totalEvents = await Event.countDocuments(query);
+    console.log("Total events found with query:", totalEvents);
     
     // Get events with pagination
     const events = await Event.find(query)
@@ -186,10 +205,12 @@ export const getAllEvents = async (req, res) => {
 
   } catch (error) {
     console.error("Error fetching events:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Error fetching events",
-      error: error.message
+      error: error.message,
+      details: error.stack
     });
   }
 };
@@ -197,6 +218,8 @@ export const getAllEvents = async (req, res) => {
 // Get events by organizer (for business dashboard)
 export const getEventsByOrganizer = async (req, res) => {
   try {
+    console.log("getEventsByOrganizer called with params:", req.params);
+    console.log("getEventsByOrganizer called with query:", req.query);
     const { organizerId } = req.params;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -240,6 +263,18 @@ export const getEventsByOrganizer = async (req, res) => {
 export const getEventById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("getEventById called with id:", id);
+    console.log("Request URL:", req.url);
+    console.log("Request query:", req.query);
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log("Invalid ObjectId:", id);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID format"
+      });
+    }
 
     const event = await Event.findById(id)
       .populate('organizer', 'fname lname email role userProfileImage businessInfo')
@@ -275,6 +310,14 @@ export const updateEvent = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     const userId = req.auth._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID format"
+      });
+    }
 
     const event = await Event.findById(id);
     if (!event) {
@@ -329,6 +372,14 @@ export const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.auth._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID format"
+      });
+    }
 
     const event = await Event.findById(id);
     if (!event) {
@@ -625,6 +676,69 @@ export const getAllEventsAdmin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching events for admin",
+      error: error.message
+    });
+  }
+};
+
+// Toggle featured status of an event (Admin only)
+export const toggleEventFeatured = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isFeatured } = req.body;
+
+    console.log("toggleEventFeatured called with:", { id, isFeatured });
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID format"
+      });
+    }
+
+    // Find the event
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+    }
+
+    // Update featured status
+    const updateData = {
+      isFeatured: isFeatured === true || isFeatured === 'true'
+    };
+
+    // If featuring the event, set featuredAt timestamp
+    if (updateData.isFeatured) {
+      updateData.featuredAt = new Date();
+    } else {
+      updateData.featuredAt = null;
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).populate('organizer', 'fname lname email role userProfileImage businessInfo');
+
+    res.json({
+      success: true,
+      message: `Event ${updateData.isFeatured ? 'featured' : 'unfeatured'} successfully`,
+      data: {
+        event: updatedEvent,
+        isFeatured: updatedEvent.isFeatured,
+        featuredAt: updatedEvent.featuredAt
+      }
+    });
+
+  } catch (error) {
+    console.error("Error toggling event featured status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error toggling event featured status",
       error: error.message
     });
   }

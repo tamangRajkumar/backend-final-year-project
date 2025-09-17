@@ -33,6 +33,7 @@ export const requireRole = (roles) => {
 
 // Admin only middleware
 export const requireAdmin = requireRole(['admin']);
+export const adminMiddleware = requireRole(['admin']);
 
 // Business and Admin middleware
 export const requireBusinessOrAdmin = requireRole(['business', 'admin']);

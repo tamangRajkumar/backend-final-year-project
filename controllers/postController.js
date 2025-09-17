@@ -50,12 +50,13 @@ export const createPost = async (req, res) => {
       });
     }
 
-    if (!user.kycInfo || !user.kycInfo.isVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "You must be KYC verified to create posts"
-      });
-    }
+    // KYC verification is optional - users can create posts without KYC verification
+    // if (!user.kycInfo || !user.kycInfo.isVerified) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "You must be KYC verified to create posts"
+    //   });
+    // }
 
     // For business proposals, validate business role
     if (postType === 'business_proposal' && user.role !== 'business') {
@@ -126,6 +127,7 @@ export const getAllPosts = async (req, res) => {
     const postType = req.query.postType; // 'normal' or 'business_proposal'
     const category = req.query.category;
     const search = req.query.search;
+    const featured = req.query.featured;
     const skip = (page - 1) * limit;
 
     // Build query
@@ -137,6 +139,10 @@ export const getAllPosts = async (req, res) => {
 
     if (category) {
       query.category = category;
+    }
+
+    if (featured === 'true') {
+      query.isFeatured = true;
     }
 
     if (search) {
@@ -238,12 +244,25 @@ export const getPostsByUser = async (req, res) => {
 export const getPostById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("getPostById called with id:", id);
+    console.log("Request URL:", req.url);
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log("Invalid ObjectId format:", id);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID format"
+      });
+    }
 
     const post = await Post.findById(id)
       .populate('postedBy', 'fname lname email role userProfileImage businessInfo')
       .populate('likes', 'fname lname userProfileImage')
       .populate('comments.postedBy', 'fname lname userProfileImage')
       .populate('businessProposal.interestedParties.user', 'fname lname email businessInfo');
+
+    console.log("Post found:", post ? "Yes" : "No");
 
     if (!post) {
       return res.status(404).json({
@@ -407,7 +426,11 @@ export const addComment = async (req, res) => {
     const { text } = req.body;
     const userId = req.auth._id;
 
+    console.log("addComment called with:", { id, text, userId });
+    console.log("Request body:", req.body);
+
     if (!text) {
+      console.log("Comment text is missing");
       return res.status(400).json({
         success: false,
         message: "Comment text is required"
@@ -716,6 +739,69 @@ export const updateRegistrationStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating registration status",
+      error: error.message
+    });
+  }
+};
+
+// Toggle featured status of a post (Admin only)
+export const togglePostFeatured = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isFeatured } = req.body;
+
+    console.log("togglePostFeatured called with:", { id, isFeatured });
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID format"
+      });
+    }
+
+    // Find the post
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    // Update featured status
+    const updateData = {
+      isFeatured: isFeatured === true || isFeatured === 'true'
+    };
+
+    // If featuring the post, set featuredAt timestamp
+    if (updateData.isFeatured) {
+      updateData.featuredAt = new Date();
+    } else {
+      updateData.featuredAt = null;
+    }
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).populate('postedBy', 'fname lname email role userProfileImage businessInfo');
+
+    res.json({
+      success: true,
+      message: `Post ${updateData.isFeatured ? 'featured' : 'unfeatured'} successfully`,
+      data: {
+        post: updatedPost,
+        isFeatured: updatedPost.isFeatured,
+        featuredAt: updatedPost.featuredAt
+      }
+    });
+
+  } catch (error) {
+    console.error("Error toggling post featured status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error toggling post featured status",
       error: error.message
     });
   }

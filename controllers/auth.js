@@ -42,16 +42,7 @@ export const signUp = async (req, res) => {
       .send("Password is required and should be min 4 characters long");
   }
 
-  // KYC validation
-  if (!kycInfo || !kycInfo.documentType) {
-    return res.status(400).send("KYC document type is required");
-  }
-  if (!kycInfo.documentNumber) {
-    return res.status(400).send("KYC document number is required");
-  }
-  if (!kycInfo.documentImage || !kycInfo.documentImage.url) {
-    return res.status(400).send("KYC document image is required");
-  }
+  // KYC validation removed - will be handled in settings
 
   // Additional validation for business accounts
   if (role === "business" && businessInfo) {
@@ -86,9 +77,9 @@ export const signUp = async (req, res) => {
     password: hashedPassword,
     role,
     kycInfo: {
-      documentType: kycInfo.documentType,
-      documentNumber: kycInfo.documentNumber,
-      documentImage: kycInfo.documentImage,
+      documentType: "",
+      documentNumber: "",
+      documentImage: { url: "", public_id: "" },
       isVerified: false, // Default to unverified
     },
     userProfileImage,
@@ -132,14 +123,7 @@ export const logIn = async (req, res) => {
     return res.status(400).send("Password is incorrect");
   }
 
-  // Check KYC verification status
-  if (!user.kycInfo || !user.kycInfo.isVerified) {
-    return res
-      .status(403)
-      .send(
-        "Your account is pending KYC verification. Please wait for admin approval."
-      );
-  }
+  // KYC verification check removed - users can login without KYC verification
   const token = jwt.sign(
     { _id: user._id },
     // process.env.JWT_SECRET || 

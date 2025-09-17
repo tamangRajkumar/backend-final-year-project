@@ -51,12 +51,15 @@ const userSchema = new Schema(
     kycInfo: {
       documentType: {
         type: String,
-        enum: ['citizenship', 'pan_card'],
-        required: true,
+        enum: {
+          values: ['citizenship', 'passport', 'pan_card', ''],
+          message: 'Document type must be either citizenship, passport, pan_card, or empty'
+        },
+        default: '',
       },
       documentNumber: {
         type: String,
-        required: true,
+        default: '',
       },
       documentImage: {
         url: String,
@@ -89,6 +92,14 @@ const userSchema = new Schema(
     },
     featuredAt: {
       type: Date,
+    },
+    goals: {
+      type: [String],
+      default: [],
+    },
+    skills: {
+      type: [String],
+      default: [],
     },
   },
   { timestamps: true }

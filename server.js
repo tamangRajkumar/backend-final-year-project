@@ -113,6 +113,14 @@ app.use(
     credentials: false, // set to true only if cookies/auth headers are needed
   })
 );
+
+// Add CORS preflight handling
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(200);
+});
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: "true" }));
 
@@ -155,6 +163,7 @@ import featuredRoutes from "./routes/featured.js";
 import postRoutes from "./routes/post.js";
 import eventRoutes from "./routes/event.js";
 import chatRoutes from "./routes/chat.js";
+import kycRoutes from "./routes/kyc.js";
 
 // Use Routes
 app.use("/api", authRoutes);
@@ -163,6 +172,7 @@ app.use("/api/featured", featuredRoutes);
 app.use("/api", postRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api", eventRoutes);
+app.use("/api/kyc", kycRoutes);
 
 // Initialize Socket.IO
 const io = new Server(httpServer, {
