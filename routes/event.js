@@ -37,7 +37,9 @@ router.get("/test-all", (req, res) => {
       "GET /api/event/test-search",
       "GET /api/event/",
       "GET /api/event/search",
-      "GET /api/event/:id"
+      "GET /api/event/:id",
+      "POST /api/event/",
+      "GET /api/event/organizer/:organizerId"
     ]
   });
 });
@@ -132,7 +134,7 @@ router.get("/search", getAllEvents);
 router.get("/admin/all", requireSignin, requireAdmin, getAllEventsAdmin);
 
 // Get events by organizer (for business dashboard) - MUST come before /:id route
-router.get("/event/organizer/:organizerId", requireSignin, (req, res, next) => {
+router.get("/organizer/:organizerId", requireSignin, (req, res, next) => {
   console.log("Organizer route called with params:", req.params);
   console.log("Organizer route called with query:", req.query);
   next();

@@ -171,7 +171,7 @@ app.use("/api", userRoutes);
 app.use("/api/featured", featuredRoutes);
 app.use("/api", postRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api", eventRoutes);
+app.use("/api/event", eventRoutes);
 app.use("/api/kyc", kycRoutes);
 
 // Initialize Socket.IO
