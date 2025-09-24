@@ -13,7 +13,9 @@ import {
   toggleEventLike,
   addEventComment,
   getAllEventsAdmin,
-  toggleEventFeatured
+  toggleEventFeatured,
+  publishEvent,
+  unpublishEvent
 } from "../controllers/eventController.js";
 
 const router = express.Router();
@@ -173,6 +175,10 @@ router.post("/:id/like", requireSignin, toggleEventLike);
 
 // Add comment to event
 router.post("/:id/comment", requireSignin, addEventComment);
+
+// Publish/Unpublish event (owner only)
+router.put("/:id/publish", requireSignin, publishEvent);
+router.put("/:id/unpublish", requireSignin, unpublishEvent);
 
 // Update event (owner only)
 router.put("/:id", requireSignin, updateEvent);

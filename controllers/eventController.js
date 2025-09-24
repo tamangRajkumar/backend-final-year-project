@@ -681,6 +681,112 @@ export const getAllEventsAdmin = async (req, res) => {
   }
 };
 
+// Publish event (owner only)
+export const publishEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.auth._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID format"
+      });
+    }
+
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+    }
+
+    // Check if user owns the event
+    if (event.organizer.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only publish your own events"
+      });
+    }
+
+    // Publish the event
+    const updatedEvent = await Event.findByIdAndUpdate(
+      id,
+      { isPublished: true },
+      { new: true }
+    ).populate('organizer', 'fname lname email role userProfileImage businessInfo');
+
+    res.json({
+      success: true,
+      message: "Event published successfully",
+      data: updatedEvent
+    });
+
+  } catch (error) {
+    console.error("Error publishing event:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error publishing event",
+      error: error.message
+    });
+  }
+};
+
+// Unpublish event (owner only)
+export const unpublishEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.auth._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID format"
+      });
+    }
+
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+    }
+
+    // Check if user owns the event
+    if (event.organizer.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only unpublish your own events"
+      });
+    }
+
+    // Unpublish the event
+    const updatedEvent = await Event.findByIdAndUpdate(
+      id,
+      { isPublished: false },
+      { new: true }
+    ).populate('organizer', 'fname lname email role userProfileImage businessInfo');
+
+    res.json({
+      success: true,
+      message: "Event unpublished successfully",
+      data: updatedEvent
+    });
+
+  } catch (error) {
+    console.error("Error unpublishing event:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error unpublishing event",
+      error: error.message
+    });
+  }
+};
+
 // Toggle featured status of an event (Admin only)
 export const toggleEventFeatured = async (req, res) => {
   try {
